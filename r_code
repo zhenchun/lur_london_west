@@ -4,7 +4,7 @@ require(data.table)
 d1<- read.csv("C:\\Users\\zy814\\Box Sync\\London LUR\\london_west_LUR\\ptrak\\cpc_all_1.csv") #read cpc data
 h1<-read.csv("C:\\Users\\zy814\\Box Sync\\London LUR\\london_west_LUR\\site_info_qgis_1.csv") #read site info data
 
-d1.c <- data.frame(apply(d1[2:ncol(d1)], 2, filterCPCv1)) #clean cpc data
+d1.c <- data.frame(apply(d1[2:ncol(d1)], 2, filterCPCv1)) #clean cpc data function created by Dr. Ming-Yi from Tsai Swiss TPH
 
 # Combined CPC summary for all sites and seasons
 cpc <- data.frame( h1$Site.ID)
@@ -32,9 +32,9 @@ alldat_MD <- list()
 
 for (f in file.names) {
 print(f)
-MDdat2 <- importMD_dm(f)
-MDdat2filt <- filterMDv3(MDdat2[[1]])
-alldat_MD[[f]] <- MDdat2filt[[1]][, c(1,4,5,6,7,8,16)]
+MDdat2 <- importMD_dm(f) #function created by Dr. Ming-Yi from Tsai Swiss TPH
+MDdat2filt <- filterMDv3(MDdat2[[1]]) #function created by Dr. Ming-Yi from Tsai Swiss TPH
+alldat_MD[[f]] <- MDdat2filt[[1]][, c(1,4,5,6,7,8,16)] #function created by Dr. Ming-Yi from Tsai Swiss TPH
 }
   
 alldat_MD1<-rbindlist(alldat_MD, fill=TRUE)
