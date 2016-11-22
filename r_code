@@ -1,0 +1,72 @@
+require(data.table)
+
+
+d1<- read.csv("C:\\Users\\zy814\\Box Sync\\London LUR\\london_west_LUR\\ptrak\\cpc_all_1.csv") #read cpc data
+h1<-read.csv("C:\\Users\\zy814\\Box Sync\\London LUR\\london_west_LUR\\site_info_qgis_1.csv") #read site info data
+
+d1.c <- data.frame(apply(d1[2:ncol(d1)], 2, filterCPCv1)) #clean cpc data
+
+# Combined CPC summary for all sites and seasons
+cpc <- data.frame( h1$Site.ID)
+cpc$mean <- sapply(d1.c, mean, na.rm = TRUE)
+cpc$median <- sapply(d1.c, median, na.rm = TRUE)
+cpc$stdev <- sapply(d1.c, sd, na.rm = TRUE)
+quant <- apply(d1.c, 2, quantile, probs = c(0.05, 0.25, 0.75, 0.95),  na.rm = TRUE)
+cpc$P05 <- quant[1, ]
+cpc$P25 <- quant[2, ]
+cpc$P75 <- quant[3, ]
+cpc$P95 <- quant[4, ]
+cpc$time <- c(as.character(h1$start.time.1))
+cpc$posix <- strptime(paste(cpc[,"time"], sep = ":"), format = "%d/%m/%Y:%H:%M")
+
+cpc<-cbind(cpc, h1$end.time.1,h1$Type)
+setnames(cpc, c("h1.Site.ID", "time","h1$end.time.1", "h1$Type"), c("id","start.time","end.time","type" ))
+
+#input and sort out MD data
+
+path <- "C:\\Users\\zy814\\Box Sync\\London LUR\\london_west_LUR\\DISCmini\\output"
+setwd(path)
+file.names <- dir(path, pattern =".txt")
+ufp.summary <- c()
+alldat_MD <- list()
+
+for (f in file.names) {
+print(f)
+MDdat2 <- importMD_dm(f)
+MDdat2filt <- filterMDv3(MDdat2[[1]])
+alldat_MD[[f]] <- MDdat2filt[[1]][, c(1,4,5,6,7,8,16)]
+}
+  
+alldat_MD1<-rbindlist(alldat_MD, fill=TRUE)
+
+alldat_MD1$ID <- NA
+alldat_MD1$ID <- sapply(alldat_MD1$PosixTime, function(x) {tmp=which(cpc$start.time<=x&cpc$end.time>=x); return(ifelse(length(tmp)==0, 0, tmp))}) # could be another way of ding this
+
+
+MDdata<-list() 
+for (i in 1:nrow(cpc)) {
+  MDdata[[i]]<-alldat_MD1[PosixTime %between% c(cpc[i,9], cpc[i,10])]$Number # this is the correct way of using for loop
+   }
+
+MD<-data.frame()
+MD$mean<-sapply(MDdata, mean, na.rm=TRUE)
+MD$median<-sapply(MDdata, median, na.rm=TRUE)
+MD$stdev <- sapply(MDdata, sd, na.rm = TRUE)
+quant1 <- sapply(MDdata, quantile, probs = c(0.05, 0.25, 0.75, 0.95),  na.rm = TRUE)
+MD$P05 <- quant1[1, ]
+MD$P25 <- quant1[2, ]
+MD$P75 <- quant1[3, ]
+MD$P95 <- quant1[4, ]
+
+
+
+
+for (i in 1:nrow(winter)){
+  winter$adjust.mean[i] <- abs(mean(alldat_MD1$Number)-winter[i, "mean.y"])+ winter[i, "mean.x"]
+  winter$adjust.median[i]<-abs(median(alldat_MD1$Number)-winter[i, "median.y"])+ winter[i, "median.x"]
+  }
+
+for (i in 1:nrow(winter)){
+  winter$ad.mean[i] <- winter[i, "mean.y"]-mean(alldat_MD1$Number)+ winter[i, "mean.x"]
+  winter$ad.median[i]<-winter[i, "median.y"]-median(alldat_MD1$Number)+ winter[i, "median.x"]
+}
